@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Flight, Reservation, Passenger
+from django.contrib.auth.models import User
 
 
 class FlightSerializer(serializers.ModelSerializer):
@@ -34,7 +35,6 @@ class PassengerSerializer(serializers.ModelSerializer):
 class ReservationsSerializer(serializers.ModelSerializer):
     passenger = PassengerSerializer(many=True)
     user = serializers.StringRelatedField()
-    user_id = serializers.IntegerField()
     flight = serializers.StringRelatedField()
     flight_id = serializers.IntegerField()
 
@@ -48,3 +48,15 @@ class ReservationsSerializer(serializers.ModelSerializer):
             "flight_id",
             "passenger",
         )
+
+    def create(self, validated_data):
+        passengers = validated_data.pop("passenger")
+        validated_data["user_id"] = self.context["request"].user.id
+        reservation = Reservation.objects.create(**validated_data)
+
+        for passenger in passengers:
+            item = Passenger.objects.create(**passenger)
+            reservation.passenger.add(item)
+
+        reservation.save()
+        return reservation
