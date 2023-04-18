@@ -1,6 +1,6 @@
 from rest_framework.viewsets import ModelViewSet
 from .models import Flight, Reservation
-from .serializers import FlightSerializer, ReservationsSerializer
+from .serializers import FlightSerializer, ReservationsSerializer, StaffFlightSerializer
 from .permissions import IsAdminOrReadOnly
 from datetime import date, datetime
 
@@ -28,6 +28,14 @@ class FlightView(ModelViewSet):
                 queryset = queryset.union(query_2)
 
         return queryset
+
+    def get_serializer_class(self):
+        response = super().get_serializer_class()
+
+        if self.request.user.is_staff:
+            response = StaffFlightSerializer
+
+        return response
 
 
 class ReservationView(ModelViewSet):
